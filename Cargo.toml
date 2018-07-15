@@ -8,7 +8,6 @@ libudev = "0.2"
 regex = "0.2.10"
 hwaddr = "0.1.4"
 rust-ini = "0.11.0"
-clippy = { version = "*", optional = true }
 libc = "0.2.40"
 log = "0.4.1"
 simple_logger = "0.5.0"

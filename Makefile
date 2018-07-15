@@ -14,16 +14,20 @@ debug: target/debug/$(NAME)
 release: target/release/$(NAME)
 	@cargo build --release
 
-.PHONY: check dist srpm rpm
+.PHONY: check dist srpm rpm clean
 
 check:
 	@cargo test
 
 dist:
-	@tar -cJf $(ARCHIVE) src udev redhat tests Cargo.toml LICENSE README.md
+	@git archive HEAD --prefix net-ifnames-prefix-0.1.0/ | xz > $(ARCHIVE)
 
 srpm: dist
 	@rpmbuild -ts $(ARCHIVE)
 
 rpm: srpm
 	@rpmbuild -tb $(ARCHIVE)
+
+clean:
+	@cargo clean
+	@rm -f $(ARCHIVE)
