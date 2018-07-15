@@ -1,0 +1,9 @@
+SUBSYSTEM!="net", GOTO="net_ifnames_prefix_end"
+ACTION!="add",    GOTO="net_ifnames_prefix_end"
+ATTR{type}!="1",  GOTO="net_ifnames_prefix_end"
+
+IMPORT{cmdline}="net.ifnames.prefix"
+ENV{net.ifnames.prefix}!="?*", GOTO="net_ifnames_prefix_end"
+PROGRAM="/usr/lib/udev/net-ifnames-prefix"
+
+LABEL="net_ifnames_prefix_end"
