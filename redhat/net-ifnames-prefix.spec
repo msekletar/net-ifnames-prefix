@@ -8,6 +8,15 @@ URL:            https://www.github.com/msekletar/net-ifnames-prefix
 Source0:        https://www.github.com/msekletar/net-ifnames-prefix/archive/%{name}-%{version}.tar.xz
 
 BuildRequires:  rust-packaging
+
+BuildRequires: (crate(libudev) >= 0.2 with crate(libudev) < 0.3)
+BuildRequires: (crate(regex) >= 0.2.10 with crate(regex) < 0.3.0)
+BuildRequires: (crate(hwaddr) >= 0.1.4 with crate(hwaddr) < 0.2.0)
+BuildRequires: (crate(rust-ini) >= 0.11.0 with crate(rust-ini) < 0.12.0)
+BuildRequires: (crate(libc) >= 0.2.40 with crate(libc) < 0.3.0)
+BuildRequires: (crate(log) >= 0.4.1 with crate(log) < 0.5.0)
+BuildRequires: (crate(simple_logger) >= 0.5.0 with crate(simple_logger) < 0.6.0)
+
 ExclusiveArch: %{rust_arches}
 
 %description
