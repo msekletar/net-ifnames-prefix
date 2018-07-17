@@ -1,12 +1,14 @@
 // SPDX-License-Identifier:  MIT
 
-extern crate hwaddr;
 extern crate libudev;
 extern crate regex;
 extern crate ini;
 extern crate libc;
 #[macro_use] extern crate log;
-extern crate simple_logger;
+//extern crate simple_logger;
+extern crate env_logger;
+extern crate hwaddr;
+
 
 use std::fs::File;
 use std::fs::read_dir;
@@ -20,7 +22,6 @@ use std::process::id;
 use std::path::PathBuf;
 use std::env;
 use hwaddr::HwAddr;
-use log::Level;
 
 use regex::Regex;
 use ini::Ini;
@@ -240,13 +241,7 @@ fn generate_link_file(link: Link) -> Result<(), Box<Error>> {
 }
 
 fn main() {
-    match simple_logger::init_with_level(Level::Warn) {
-        Ok(_) => {},
-        Err(e) => {
-            eprintln!("Failed to initialize logging: {}", e);
-            std::process::exit(1);
-        }
-    }
+    env_logger::init();
 
     let prefix = match get_prefix_from_file("/proc/cmdline") {
         Ok(p) => p,
@@ -308,7 +303,6 @@ fn main() {
         std::process::exit(1);
     }
 }    
-
 
 #[cfg(test)]
 mod tests {

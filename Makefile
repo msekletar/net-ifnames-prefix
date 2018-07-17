@@ -6,6 +6,8 @@ PATCH:=0
 VERSION:=$(MAJOR).$(MINOR).$(PATCH)
 ARCHIVE:=$(NAME)-$(VERSION).tar.xz
 
+FEDORA_VERSION:=rawhide
+
 all: debug
 
 debug: target/debug/$(NAME)
@@ -27,6 +29,10 @@ srpm: dist
 
 rpm: srpm
 	@rpmbuild -tb $(ARCHIVE)
+
+mock-rpm: srpm
+	$(eval SRPM:=$(shell ls ~/rpmbuild/SRPMS/$(NAME)*.src.rpm))
+	@mock -r fedora-$(FEDORA_VERSION)-x86_64 --rebuild $(SRPM)
 
 clean:
 	@cargo clean
