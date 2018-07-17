@@ -10,6 +10,7 @@ Source0:        https://www.github.com/msekletar/net-ifnames-prefix/archive/%{na
 ExclusiveArch: %{rust_arches}
 
 BuildRequires:  rust-packaging
+BuildRequires:  git
 # [dependencies]
 BuildRequires: (crate(libudev) >= 0.2 with crate(libudev) < 0.3)
 BuildRequires: (crate(regex) >= 1.0.1 with crate(regex) < 2.0.0)
