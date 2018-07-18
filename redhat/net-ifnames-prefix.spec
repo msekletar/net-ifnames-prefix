@@ -36,11 +36,15 @@ net_setup_link built-in (e.g. /etc/systemd/network/70-net-ifnames-prefix-net0.li
 %install
 %cargo_install
 
+/bin/install -d %{buildroot}/%{_prefix}/lib/udev/rules.d/
+/bin/install -m 0644 -p udev/70-net-ifnames-prefix.rules %{buildroot}/%{_prefix}/lib/udev/rules.d/
+
 %files
 %defattr(-,root,root,-)
 %license LICENSE
 %doc README.md
-
+%{_prefix}/lib/udev/%{name}
+%{_prefix}/lib/udev/rules.d/*.rules
 
 %changelog
 * Sun Jul 15 2018 Michal Sekletar <msekleta@redhat.com>
