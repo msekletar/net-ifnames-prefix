@@ -3,30 +3,24 @@
 use std::fs::File;
 use std::fs::read_dir;
 use std::error::Error;
-use std::io::{Read, Write};
+use std::io::{Write};
 use std::string::ToString;
 use std::cmp::Ordering;
-use std::iter::Extend;
-use std::ffi::CString;
-use std::process::id;
 use std::path::PathBuf;
 use std::env;
 use std::collections::HashMap;
 
 use hwaddr::HwAddr;
-use regex::Regex;
 use ini::Ini;
 use libudev;
-
-type MAC = String;
 
 static NET_SETUP_LINK_CONF_DIR : &'static str = "/etc/systemd/network/";
 static LINK_FILE_PREFIX : &'static str = "70-net-ifnames-prefix-";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LinkConfig {
-    name: String,
-    hwaddr: HwAddr
+    pub name: String,
+    pub hwaddr: HwAddr
 }
 
 impl LinkConfig {
@@ -35,14 +29,14 @@ impl LinkConfig {
             name: link_name.to_string(),
             hwaddr: LinkConfig::hwaddr_from_event_device()?
         };
-        
+
         Ok(config)
     }
 
-    pub fn new_with_hwaddr<T: ToString>(link_name: &T, hwaddr: String) -> Result<LinkConfig, Box<Error>> {
+    pub fn new_with_hwaddr<T: ToString>(link_name: &T, hwaddr: &HwAddr) -> Result<LinkConfig, Box<Error>> {
         let config = LinkConfig {
             name: link_name.to_string(),
-            hwaddr: hwaddr.parse::<HwAddr>()?
+            hwaddr: *hwaddr,
         };
 
         Ok(config)
@@ -54,7 +48,7 @@ impl LinkConfig {
         let mut syspath = "/sys".to_string();
 
         syspath.push_str(&devpath);
-        
+
         let mac = udev.device_from_syspath(&PathBuf::from(syspath))?.attribute_value("address").ok_or("Failed to get MAC Address")?.to_owned();
         let mac: &str = mac.to_str().ok_or("Failed to convert OsStr to String")?;
         let hwaddr = mac.parse::<HwAddr>()?;
@@ -68,7 +62,7 @@ impl LinkConfig {
         path.push(LINK_FILE_PREFIX.to_string() + &self.name + ".link");
         path
     }
-    
+
     pub fn write_link_file(&self) -> Result<(), Box<Error>> {
         let path = self.link_file_path();
         debug!("{:?}", path);
@@ -76,7 +70,7 @@ impl LinkConfig {
         let mac = LinkConfig::hwaddr_from_event_device()?;
 
         write!(&mut link_file, "[Match]\nMACAddress={}\n\n[Link]\nName={}\n", mac, self.name)?;
-    
+
         Ok(())
     }
 }
@@ -93,12 +87,8 @@ impl PartialOrd for LinkConfig {
     }
 }
 
-
-
-
-
 pub struct NetSetupLinkConfig  {
-    config: HashMap<MAC, LinkConfig>,
+    config: HashMap<HwAddr, LinkConfig>,
     links: Vec<LinkConfig>,
     ifname_prefix: String
 }
@@ -112,18 +102,20 @@ impl NetSetupLinkConfig {
         }
     }
 
-    pub fn load(&mut self) {
-        self.enumerate_links_from_udev();
-        self.enumerate_links_from_files();
+    pub fn load(&mut self) -> Result<(), Box<Error>> {
+        self.enumerate_links_from_udev()?;
+        self.enumerate_links_from_files()?;
 
         // Most links have link file present and are currently known to udev.
         // Hence enumeration from both sources created duplicate entries in the links vector.
         self.links.sort();
         self.links.dedup();
+
+        Ok(())
     }
 
-    pub fn config_for_hwaddr(&self, mac: String) -> Option<LinkConfig> {
-        if let Some(c) = self.config.get(&mac) {
+    pub fn for_hwaddr(&self, mac: &HwAddr) -> Option<LinkConfig> {
+        if let Some(c) = self.config.get(mac) {
             return Some(c.clone());
         }
         None
@@ -146,7 +138,7 @@ impl NetSetupLinkConfig {
 
         Ok(())
     }
-    
+
     fn enumerate_links_from_udev(&mut self) -> Result<(), Box<Error>> {
         let udev  = libudev::Context::new()?;
         let mut enumerate = libudev::Enumerator::new(&udev)?;
@@ -156,7 +148,7 @@ impl NetSetupLinkConfig {
 
         for device in enumerate.scan_devices()? {
             let link = String::from(device.sysname().to_str().ok_or("Failed to convert device sysname (OsStr) to string slice")?);
-            links.push(LinkConfig::new(&link));
+            links.push(LinkConfig::new(&link)?);
         }
 
         links = links.iter()
@@ -171,7 +163,7 @@ impl NetSetupLinkConfig {
 
     fn enumerate_links_from_files(&mut self) -> Result<(), Box<Error>> {
         let mut link_files = Vec::new();
-        
+
         for n in read_dir("/etc/systemd/network")? {
             let entry = match n {
                 Ok(e) => e,
@@ -203,10 +195,11 @@ impl NetSetupLinkConfig {
                 continue;
             }
 
-            self.config.insert(mac.clone(), LinkConfig::new(name));
-            self.links.push(LinkConfig::new(name));
+            let hwaddr = mac.parse::<HwAddr>()?;
+
+            self.config.insert(hwaddr, LinkConfig::new(name)?);
+            self.links.push(LinkConfig::new(name)?);
         }
         Ok(())
     }
 }
-

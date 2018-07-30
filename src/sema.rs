@@ -5,12 +5,12 @@ use std::process::id;
 use libc;
 
 #[derive(Debug)]
-struct Semaphore {
+pub struct Semaphore {
     raw_sema: *mut libc::sem_t,
 }
 
 impl Semaphore {
-    fn new(name: &str) -> Result<Semaphore, Box<Error>> {
+    pub fn new_with_name(name: &str) -> Result<Semaphore, Box<Error>> {
         let raw_sema_name = CString::new(name)?;
 
         let s;
@@ -24,7 +24,7 @@ impl Semaphore {
         Ok(Semaphore{raw_sema: s})
     }
 
-    fn lock(&mut self) {
+    pub fn lock(&mut self) {
         unsafe {
             libc::sem_wait(self.raw_sema);
             debug!("lock taken by PID={}", id());
@@ -32,7 +32,7 @@ impl Semaphore {
 
     }
     
-    fn unlock(&mut self) {
+    pub fn unlock(&mut self) {
         unsafe {
             debug!("lock released by PID={}", id());
             libc::sem_post(self.raw_sema);
